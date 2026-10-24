@@ -19,7 +19,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Convierte delimitadores matemáticos de proyectos eXeLearning directamente en el navegador.">
+  <meta name="description" content="Convierte delimitadores matemáticos de proyectos eXeLearning (.elpx y .elp) directamente en el navegador.">
   <title>Convertidor eXeLearning · delimitadores matemáticos</title>
   <style>
     :root { color-scheme: light; --ink:#182230; --muted:#586577; --line:#d8dee8; --surface:#f5f7fb; --accent:#185abd; --accent-hover:#124796; --good:#176b45; --bad:#a62c2c; }
@@ -61,14 +61,14 @@
 <main>
   <div class="eyebrow">Herramienta gratuita para eXeLearning</div>
   <h1>Convertidor de delimitadores matemáticos</h1>
-  <p class="intro">Sube un proyecto <code>.elpx</code> y descarga una copia con los delimitadores matemáticos convertidos. Todo el procesamiento se realiza en tu navegador: el archivo no se envía a un servidor.</p>
+  <p class="intro">Sube un proyecto <code>.elpx</code> o <code>.elp</code> y descarga una copia con los delimitadores matemáticos convertidos en <code>content.xml</code> (<code>.elpx</code>) o <code>contentv3.xml</code> (<code>.elp</code>). Todo el procesamiento se realiza en tu navegador: el archivo no se envía a un servidor.</p>
 
   <section class="panel" aria-labelledby="upload-title">
     <h2 id="upload-title" style="margin-top:0">1. Selecciona tu proyecto</h2>
     <label class="drop" id="drop" for="file">
-      <strong>Arrastra aquí tu archivo .elpx</strong>
+      <strong>Arrastra aquí tu archivo .elpx o .elp</strong>
       <span>o haz clic para elegirlo desde tu dispositivo.</span>
-      <input id="file" type="file" accept=".elpx,.zip,application/zip">
+      <input id="file" type="file" accept=".elpx,.elp,.zip,application/zip">
     </label>
     <div id="filename" class="filename">Todavía no has seleccionado ningún archivo.</div>
     <div class="actions">
@@ -85,8 +85,8 @@
     <div class="rule"><strong>Expresiones en línea</strong><br><code>$…$</code> <span aria-hidden="true">→</span> <code>\(…\)</code></div>
   </div>
   <h2>Privacidad y recomendaciones</h2>
-  <p class="note">El archivo original no se modifica. La herramienta abre el proyecto como ZIP, cambia únicamente <code>content.xml</code> y vuelve a empaquetar el proyecto. Revisa el archivo resultante en eXeLearning antes de distribuirlo. Los signos <code>$</code> que parecen monedas (<code>5$</code>, <code>$5 y $10</code>, <code>cuesta 5$ y 10$</code>) no se convierten: una fórmula en línea debe empezar con un carácter que no sea espacio justo después del <code>$</code>, terminar con uno justo antes del <code>$</code> de cierre, y este no puede ir seguido de un número. Por eso, una fórmula como <code>$ x $</code> (con espacios) tampoco se convertiría; escríbela como <code>$x$</code>.</p>
-  <footer>La biblioteca JSZip se carga desde una CDN, por lo que se necesita conexión a Internet para abrir la aplicación. Los archivos seleccionados se procesan localmente en el navegador.<br><br>© 2026 Rubén Jiménez Jiménez · Distribuido bajo la <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">licencia Apache 2.0</a>: puedes usar, copiar, distribuir y modificar la aplicación manteniendo el reconocimiento de autoría. Se ofrece «tal cual», sin garantías.</footer>
+  <p class="note">El archivo original no se modifica. La herramienta abre el proyecto como ZIP, cambia únicamente <code>content.xml</code> (en <code>.elpx</code>) o <code>contentv3.xml</code> (en <code>.elp</code>) y vuelve a empaquetar el proyecto. Revisa el archivo resultante en eXeLearning antes de distribuirlo. Los signos <code>$</code> que parecen monedas (<code>5$</code>, <code>$5 y $10</code>, <code>cuesta 5$ y 10$</code>) no se convierten: una fórmula en línea debe empezar con un carácter que no sea espacio justo después del <code>$</code>, terminar con uno justo antes del <code>$</code> de cierre, y este no puede ir seguido de un número. Por eso, una fórmula como <code>$ x $</code> (con espacios) tampoco se convertiría; escríbela como <code>$x$</code>.</p>
+  <footer>La biblioteca JSZip se carga desde una CDN, por lo que se necesita conexión a Internet para abrir la aplicación. Los archivos seleccionados se procesan localmente en el navegador.<br>© 2026 Rubén Jiménez Jiménez · Distribuido bajo la <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">licencia Apache 2.0</a>: puedes usar, copiar, distribuir y modificar la aplicación manteniendo el reconocimiento de autoría. Se ofrece «tal cual», sin garantías.</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -127,11 +127,11 @@
     clearDownload();
     convertButton.hidden = false;
     if (!file) { reset(); return; }
-    if (!/\.(elpx|zip)$/i.test(file.name)) {
+    if (!/\.(elpx?|zip)$/i.test(file.name)) {
       selectedFile = null; selectedHandle = null;
       filename.textContent = EMPTY;
       convertButton.disabled = true;
-      setStatus('El archivo debe tener extensión .elpx (o .zip).', 'error');
+      setStatus('El archivo debe tener extensión .elpx o .elp (o .zip).', 'error');
       return;
     }
     selectedFile = file; selectedHandle = handle || null;
@@ -148,7 +148,7 @@
     e.preventDefault();
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Proyecto eXeLearning', accept: { 'application/zip': ['.elpx', '.zip'] } }]
+        types: [{ description: 'Proyecto eXeLearning', accept: { 'application/zip': ['.elpx', '.elp', '.zip'] } }]
       });
       setFile(await handle.getFile(), handle);
     } catch (err) {
@@ -212,9 +212,13 @@
     let ok = false;
     try {
       const zip = await JSZip.loadAsync(selectedFile);
-      const candidates = Object.keys(zip.files).filter(n => !zip.files[n].dir && (n === 'content.xml' || n.endsWith('/content.xml')));
+      // .elpx → content.xml · .elp → contentv3.xml · .zip → cualquiera de los dos
+      const isElp = /\.elp$/i.test(selectedFile.name);
+      const isElpx = /\.elpx$/i.test(selectedFile.name);
+      const targets = isElp ? ['contentv3.xml'] : isElpx ? ['content.xml'] : ['content.xml', 'contentv3.xml'];
+      const candidates = Object.keys(zip.files).filter(n => !zip.files[n].dir && targets.some(t => n === t || n.endsWith('/' + t)));
       if (candidates.length !== 1) {
-        throw new Error(`Se esperaba encontrar un único content.xml y se encontraron ${candidates.length}.`);
+        throw new Error(`Se esperaba encontrar un único ${targets.join(' o ')} y se encontraron ${candidates.length}.`);
       }
       const xmlPath = candidates[0];
       const original = await zip.file(xmlPath).async('uint8array');
@@ -253,8 +257,10 @@
 
       zip.file(xmlPath, xml);
       const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-      const baseName = selectedFile.name.replace(/\.(elpx|zip)$/i, '');
-      const outName = baseName + '_convertido.elpx';
+      const extMatch = selectedFile.name.match(/\.(elpx?|zip)$/i);
+      const baseName = selectedFile.name.slice(0, -extMatch[0].length);
+      const outExt = extMatch[0]; // misma extensión que el original
+      const outName = baseName + '_convertido' + outExt;
       const leftover = (xml.match(/(?<!\\)\$/g) || []).length;
 
       let msg = counts.block === 0 && counts.inline === 0
@@ -274,7 +280,7 @@
             const opts = {
               suggestedName: outName,
               id: 'exe-convertidor',
-              types: [{ description: 'Proyecto eXeLearning', accept: { 'application/zip': ['.elpx'] } }]
+              types: [{ description: 'Proyecto eXeLearning', accept: { 'application/zip': [outExt.toLowerCase()] } }]
             };
             if (selectedHandle) opts.startIn = selectedHandle; // misma carpeta que el original
             const fh = await window.showSaveFilePicker(opts);
